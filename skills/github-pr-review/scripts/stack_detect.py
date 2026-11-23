@@ -24,8 +24,10 @@ def classify_file(path: str) -> str | None:
         for i in range(len(parts))
     ):
         return "skill-authoring"
-    if filename.endswith((".py", ".pyi")) or filename in {"pyproject.toml", "requirements.txt"} or filename.startswith("requirements-"):
+    if filename.endswith((".pyi",)) or filename in {"pyproject.toml", "requirements.txt"} or filename.startswith("requirements-"):
         return "python"
+    if filename.endswith(".py"):
+        return "general"
     if filename.endswith((".java", ".kt", ".kts", ".gradle")) or filename in JAVA_FILES or filename.endswith(".properties"):
         return "java-springboot"
     if filename.endswith(tuple(WEB_EXTENSIONS)) or filename == "package.json":
