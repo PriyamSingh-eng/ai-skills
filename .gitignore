@@ -1,0 +1,4 @@
+﻿# Local credentials and generated review artifacts
+.env
+**/.env
+*.json
