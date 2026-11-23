@@ -16,11 +16,21 @@ class GitHubPrTests(unittest.TestCase):
         parsed = parse_pr_url("https://github.com/acme/payments/pull/123?tab=files")
         self.assertEqual((parsed["owner"], parsed["repo"], parsed["number"]), ("acme", "payments", 123))
         self.assertEqual(parsed["host"], "github.com")
+        self.assertEqual(parsed["url"], "https://github.com/acme/payments/pull/123")
 
     def test_parse_enterprise_locator(self):
         parsed = parse_pr_locator("https://git.example.org/team/payments/pull/9")
         self.assertEqual(parsed["host"], "git.example.org")
         self.assertEqual(parsed["number"], 9)
+
+    def test_reject_missing_or_invalid_pull_number(self):
+        for url in (
+            "https://github.com/acme/payments/pull",
+            "https://github.com/acme/payments/pull/nope",
+            "https://github.com/acme/pull/123",
+        ):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                parse_pr_url(url)
 
     def test_reject_non_pr_url(self):
         with self.assertRaises(ValueError):
