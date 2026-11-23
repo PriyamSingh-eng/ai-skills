@@ -56,7 +56,8 @@ def parse_pr_url(value: str) -> dict:
     parts = [part for part in parsed.path.split("/") if part]
     try:
         pull_index = parts.index("pull")
-        owner, repo, number_text = parts[pull_index - 2 : pull_index + 1]
+        owner, repo = parts[pull_index - 2 : pull_index]
+        number_text = parts[pull_index + 1]
         number = int(number_text)
     except (ValueError, IndexError) as exc:
         raise ValueError("Expected a URL shaped like https://host/OWNER/REPO/pull/NUMBER") from exc
@@ -64,7 +65,7 @@ def parse_pr_url(value: str) -> dict:
         raise ValueError("Pull request URL contains an invalid owner, repository, or number")
     return {"host": parsed.netloc, "owner": owner,
             "repo": repo.removesuffix(".git"), "number": number,
-            "url": f"{parsed.scheme}://{parsed.netloc}/{'/'.join(parts[:pull_index + 1])}"}
+            "url": f"{parsed.scheme}://{parsed.netloc}/{'/'.join(parts[:pull_index + 2])}"}
 
 
 def parse_pr_locator(value: str) -> dict:
@@ -100,8 +101,9 @@ def _rest_api_base(locator: dict) -> str:
         parsed = urlsplit(configured)
         if parsed.scheme != "https" or not parsed.netloc:
             raise RuntimeError("GITHUB_API_URL must be an https URL")
-        if parsed.netloc.lower() != host.lower():
-            raise RuntimeError("GITHUB_API_URL host must match the pull request host")
+        expected_api_hosts = {"api.github.com"} if host.lower() == "github.com" else {host.lower()}
+        if parsed.netloc.lower() not in expected_api_hosts:
+            raise RuntimeError("GITHUB_API_URL host must be api.github.com for github.com PRs, or match the pull request host for Enterprise")
         return configured
     if host.lower() == "github.com":
         return "https://api.github.com"

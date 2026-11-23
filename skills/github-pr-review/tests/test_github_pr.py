@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from github_pr import (
     extract_jira_key, load_config_env, load_pr_data, parse_pr_locator,
-    parse_pr_url, run_github_json,
+    parse_pr_url, run_github_json, _rest_api_base,
 )
 
 
@@ -16,15 +16,30 @@ class GitHubPrTests(unittest.TestCase):
         parsed = parse_pr_url("https://github.com/acme/payments/pull/123?tab=files")
         self.assertEqual((parsed["owner"], parsed["repo"], parsed["number"]), ("acme", "payments", 123))
         self.assertEqual(parsed["host"], "github.com")
+        self.assertEqual(parsed["url"], "https://github.com/acme/payments/pull/123")
 
     def test_parse_enterprise_locator(self):
         parsed = parse_pr_locator("https://git.example.org/team/payments/pull/9")
         self.assertEqual(parsed["host"], "git.example.org")
         self.assertEqual(parsed["number"], 9)
 
+    def test_reject_missing_or_invalid_pull_number(self):
+        for url in (
+            "https://github.com/acme/payments/pull",
+            "https://github.com/acme/payments/pull/nope",
+            "https://github.com/acme/pull/123",
+        ):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                parse_pr_url(url)
+
     def test_reject_non_pr_url(self):
         with self.assertRaises(ValueError):
             parse_pr_url("https://github.com/acme/payments/issues/3")
+
+    @patch.dict("os.environ", {"GITHUB_API_URL": "https://api.github.com"}, clear=True)
+    def test_direct_rest_accepts_public_github_api_url(self):
+        locator = parse_pr_locator("acme/payments#1")
+        self.assertEqual(_rest_api_base(locator), "https://api.github.com")
 
     def test_load_config_env_preserves_existing_environment(self):
         import os
