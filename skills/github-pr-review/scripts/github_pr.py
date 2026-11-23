@@ -100,8 +100,9 @@ def _rest_api_base(locator: dict) -> str:
         parsed = urlsplit(configured)
         if parsed.scheme != "https" or not parsed.netloc:
             raise RuntimeError("GITHUB_API_URL must be an https URL")
-        if parsed.netloc.lower() != host.lower():
-            raise RuntimeError("GITHUB_API_URL host must match the pull request host")
+        expected_api_hosts = {"api.github.com"} if host.lower() == "github.com" else {host.lower()}
+        if parsed.netloc.lower() not in expected_api_hosts:
+            raise RuntimeError("GITHUB_API_URL host must be api.github.com for github.com PRs, or match the pull request host for Enterprise")
         return configured
     if host.lower() == "github.com":
         return "https://api.github.com"

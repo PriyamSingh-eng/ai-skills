@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from github_pr import (
     extract_jira_key, load_config_env, load_pr_data, parse_pr_locator,
-    parse_pr_url, run_github_json,
+    parse_pr_url, run_github_json, _rest_api_base,
 )
 
 
@@ -25,6 +25,11 @@ class GitHubPrTests(unittest.TestCase):
     def test_reject_non_pr_url(self):
         with self.assertRaises(ValueError):
             parse_pr_url("https://github.com/acme/payments/issues/3")
+
+    @patch.dict("os.environ", {"GITHUB_API_URL": "https://api.github.com"}, clear=True)
+    def test_direct_rest_accepts_public_github_api_url(self):
+        locator = parse_pr_locator("acme/payments#1")
+        self.assertEqual(_rest_api_base(locator), "https://api.github.com")
 
     def test_load_config_env_preserves_existing_environment(self):
         import os
