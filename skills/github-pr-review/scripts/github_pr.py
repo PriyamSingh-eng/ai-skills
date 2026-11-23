@@ -56,7 +56,8 @@ def parse_pr_url(value: str) -> dict:
     parts = [part for part in parsed.path.split("/") if part]
     try:
         pull_index = parts.index("pull")
-        owner, repo, number_text = parts[pull_index - 2 : pull_index + 1]
+        owner, repo = parts[pull_index - 2 : pull_index]
+        number_text = parts[pull_index + 1]
         number = int(number_text)
     except (ValueError, IndexError) as exc:
         raise ValueError("Expected a URL shaped like https://host/OWNER/REPO/pull/NUMBER") from exc
@@ -64,7 +65,7 @@ def parse_pr_url(value: str) -> dict:
         raise ValueError("Pull request URL contains an invalid owner, repository, or number")
     return {"host": parsed.netloc, "owner": owner,
             "repo": repo.removesuffix(".git"), "number": number,
-            "url": f"{parsed.scheme}://{parsed.netloc}/{'/'.join(parts[:pull_index + 1])}"}
+            "url": f"{parsed.scheme}://{parsed.netloc}/{'/'.join(parts[:pull_index + 2])}"}
 
 
 def parse_pr_locator(value: str) -> dict:
